@@ -5421,7 +5421,7 @@ static int l_EmscriptenCancelMainLoop(lua_State *L) {
 }
 #endif
 
-static const luaL_Reg l_functions[] = {
+static const luaL_Reg l_raylib_functions[] = {
 #if defined(__EMSCRIPTEN__)
   {"EmscriptenSetMainLoop", l_EmscriptenSetMainLoop},
   {"EmscriptenCancelMainLoop", l_EmscriptenCancelMainLoop},
@@ -9796,7 +9796,7 @@ static void l_Ray_register(lua_State *L, const char *ref) {
 }
 
 LUAMOD_API int luaopen_raylib(lua_State *L) {
-  luaL_newlib(L, l_functions);
+  luaL_newlib(L, l_raylib_functions);
   l_IVector3_register(L, NULL);
   l_Image_register(L, NULL);
   l_Wave_register(L, NULL);
