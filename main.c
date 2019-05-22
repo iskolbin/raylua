@@ -1,5 +1,3 @@
-#include "raylib_bind.c"
-
 #if defined(__EMSCRIPTEN__)
     #include <emscripten/emscripten.h>
 #endif
@@ -14,6 +12,34 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Lua 5.1 compatibility
+#if (LUA_VERSION_NUM <= 501)
+#define LUAMOD_API LUALIB_API
+#define luaL_newlib(L,lib) luaL_register(L,NULL,lib)
+#define luaL_setfuncs(L,l,z) luaL_register(L,NULL,l)
+#define luaL_setmetatable(L,mt) luaL_getmetatable(L,mt);lua_setmetatable(L,-2)
+#define lua_rawlen lua_objlen
+#endif
+
+static void *luaX_checklightuserdata(lua_State *L, int index, const char *funcName) {
+  if (lua_islightuserdata(L, index)) {
+    return lua_touserdata(L, index);
+  } else {
+    luaL_error(L, "bad argument #%d to %s (lightuserdata expected, got %s)", index, funcName, lua_typename(L, index));
+    return NULL;
+  }
+}
+
+#include "bindings/raylib.c"
+#include "bindings/easings.c"
+#include "bindings/raymath.c"
+
+static const luaL_Reg libraries[] = {
+	{"raylib", luaopen_raylib},
+	{"easings", luaopen_easings},
+	{"raymath", luaopen_raymath},
+	{NULL, NULL}
+};
 
 #if !defined(LUA_PROMPT)
 #define LUA_PROMPT		"> "
@@ -594,7 +620,9 @@ int main (int argc, char **argv) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;
   }
-	luaL_requiref(L, "raylib", luaopen_raylib, 0);
+	for (int i = 0; libraries[i].name != NULL; i++) {
+		luaL_requiref(L, libraries[i].name, libraries[i].func, 0);
+	}
   lua_pushcfunction(L, &pmain);  /* to call 'pmain' in protected mode */
   lua_pushinteger(L, argc);  /* 1st argument */
   lua_pushlightuserdata(L, argv); /* 2nd argument */

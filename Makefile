@@ -51,7 +51,8 @@ ifeq ($(PLATFORM_OS),OSX)
     LUAPLAT ?= macosx
 endif
 ifeq ($(PLATFORM_OS),LINUX)
-    LIBS = -lGL -lc -lm -lpthread -ldl -lrt
+    CFLAGS += -DLUA_USE_READLINE
+    LIBS = -lGL -lc -lm -lpthread -ldl -lrt -lX11 -lreadline
     LUAPLAT ?= linux
 endif
 ifeq ($(PLATFORM_OS),BSD)
@@ -71,7 +72,7 @@ endif
 LUAPLAT ?= posix
 
 all:
-	pushd lua$(LUA)/src && $(MAKE) $(LUAPLAT) && popd && pushd raylib$(RAYLIB)/src && $(MAKE) && popd && $(CC) $(CFLAGS) -I./lua$(LUA)/src -I./raylib$(RAYLIB)/src main.c $(STATIC_LUA) $(STATIC_RAYLIB) $(LIBS)
+	cd lua$(LUA)/src && $(MAKE) $(LUAPLAT) && cd ../.. && cd raylib$(RAYLIB)/src && $(MAKE) && cd ../.. && $(CC) $(CFLAGS) -I./lua$(LUA)/src -I./raylib$(RAYLIB)/src main.c $(STATIC_LUA) $(STATIC_RAYLIB) $(LIBS) -o rail
 
 clean:
-	pushd lua$(LUA)/src && $(MAKE) clean && popd && pushd raylib$(RAYLIB)/src && $(MAKE) clean && popd
+	cd lua$(LUA)/src && $(MAKE) clean && cd ../.. && cd raylib$(RAYLIB)/src && $(MAKE) clean && cd ../..
