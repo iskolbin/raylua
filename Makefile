@@ -37,6 +37,11 @@ ifeq ($(PLATFORM),PLATFORM_RPI)
     endif
 endif
 
+
+STATIC_LUA=lua$(LUA)/src/liblua.a
+STATIC_RAYLIB=raylib$(RAYLIB)/src/libraylib.a
+
+
 ifeq ($(PLATFORM_OS),WINDOWS)
     LIBS = -static-libgcc -lopengl32 -lgdi32 -lwinmm
     LUAPLAT ?= mingw
@@ -55,20 +60,15 @@ ifeq ($(PLATFORM_OS),BSD)
 endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
     CC = emcc
-    CFLAGS += -Os -s USE_GLFW=3
+    CFLAGS += -Os -s USE_GLFW=3 -s FORCE_FILESYSTEM=1 -s EMTERPRETIFY=1 -s EMTERPRETIFY_ASYNC=1 -Iraylib$(RAYLIB)/src/external/glfw/include --preload-file main.lua
     LUAPLAT ?= web
+    STATIC_RAYLIB=raylib$(RAYLIB)/src/libraylib.bc
 endif
 ifeq ($(PLATFORM),PLATFORM_RPI)
     LIBS = -L/opt/vc/lib -lbrcmGLESv2 -lbrcmEGL -lpthread -lrt -lm -lbcm_host -ldl
 endif
 
 LUAPLAT ?= posix
-
-STATIC_LUA=lua$(LUA)/src/liblua.a
-STATIC_RAYLIB=raylib$(RAYLIB)/src/libraylib.a
-ifeq ($(PLATFORM),PLATFORM_WEB)
-STATIC_RAYLIB=raylib$(RAYLIB)/src/libraylib.bc
-endif
 
 all:
 	pushd lua$(LUA)/src && $(MAKE) $(LUAPLAT) && popd && pushd raylib$(RAYLIB)/src && $(MAKE) && popd && $(CC) $(CFLAGS) -I./lua$(LUA)/src -I./raylib$(RAYLIB)/src main.c $(STATIC_LUA) $(STATIC_RAYLIB) $(LIBS)

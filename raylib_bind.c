@@ -3507,7 +3507,7 @@ static int l_GetGesturePinchAngle(lua_State *L) {
 static int l_GetDirectoryFiles(lua_State *L) {
   int count;
   char **files = GetDirectoryFiles(luaL_checkstring(L,1), &count);
-  for (int i = 0; i < count-1; i++) lua_pushstring(L, files[i]);
+  for (int i = 0; i < count; i++) lua_pushstring(L, files[i]);
   ClearDirectoryFiles();
   return count;
 }
@@ -5407,7 +5407,51 @@ static int l_Ray_meta(lua_State *L) {
   luaL_getmetatable(L, "Ray");
   return 1;
 }
+
+#if defined(__EMSCRIPTEN__)
+// To avoid inclusion of <emscripten.h>
+extern void emscripten_set_main_loop_arg(void (*func)(void *), void *arg, int fps, int simulate_infinite_loop);
+extern void emscripten_cancel_main_loop(void);
+
+static const char EMSCRIPTEN_MAIN_LOOP_KEY[] = "EMSCRIPTEN_MAIN_LOOP";
+
+static void EmscriptenUpdateMainLoop(void *state)
+{
+  lua_State *L = state;
+  lua_pushstring(L, EMSCRIPTEN_MAIN_LOOP_KEY);
+	lua_gettable(L, LUA_REGISTRYINDEX);
+  lua_pcall(L, 0, 0, -1);
+}
+
+static int l_EmscriptenSetMainLoop(lua_State *L) {
+  if (lua_type(L, -1) == LUA_TFUNCTION)
+  {
+    lua_pushstring(L, EMSCRIPTEN_MAIN_LOOP_KEY);
+    lua_gettable(L, LUA_REGISTRYINDEX);
+    lua_pushvalue(L, -3);
+    lua_settable(L, -2);
+    lua_pop(L, 1);
+    emscripten_set_main_loop_arg(EmscriptenUpdateMainLoop, L, 0, 1);
+    return 0;
+  }
+  else
+  {
+    return luaL_error(L, "Bad argument, should be function");
+  }
+}
+
+static int l_EmscriptenCancelMainLoop(lua_State *L) {
+	(void) L;
+  emscripten_cancel_main_loop();
+  return 0;
+}
+#endif
+
 static const luaL_Reg l_functions[] = {
+#if defined(__EMSCRIPTEN__)
+  {"EmscriptenSetMainLoop", l_EmscriptenSetMainLoop},
+  {"EmscriptenCancelMainLoop", l_EmscriptenCancelMainLoop},
+#endif
   {"GetDroppedFiles", l_GetDroppedFiles},
   {"SetConfigFlags", l_SetConfigFlags},
   {"ToggleVrMode", l_ToggleVrMode},

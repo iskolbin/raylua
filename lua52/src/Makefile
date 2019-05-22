@@ -90,7 +90,7 @@ none:
 	@echo "   $(PLATS)"
 
 web:
-	$(MAKE) $(ALL) CC=$(EMCC) SYSCFLAGS="-DLUA_ANSI" CFLAGS="-O2 -DLUA_USE_POSIX"
+	$(MAKE) $(ALL) CC="$(shell em-config EMCC)" AR="$(shell em-config EMAR) rcu" RANLIB="$(shell em-config EMRANLIB)" CFLAGS="-Os"
 
 aix:
 	$(MAKE) $(ALL) CC="xlc" CFLAGS="-O2 -DLUA_USE_POSIX -DLUA_USE_DLOPEN" SYSLIBS="-ldl" SYSLDFLAGS="-brtl -bexpall"

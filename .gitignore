@@ -1,0 +1,9 @@
+*.out
+*.js
+*.o
+*.bc
+*.a
+*.data
+*.wasm
+*/*/lua
+*/*/luac

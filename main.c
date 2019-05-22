@@ -1,5 +1,9 @@
 #include "raylib_bind.c"
 
+#if defined(__EMSCRIPTEN__)
+    #include <emscripten/emscripten.h>
+#endif
+
 #include <lua.h>
 #include <lauxlib.h>
 #include <lualib.h>
