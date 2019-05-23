@@ -144,24 +144,17 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
         RAYLIB_PATH    = $(realpath $(RAYLIB_PREFIX))
     endif
 endif
-# Default path for raylib on Raspberry Pi, if installed in different path, update it!
-# TODO: update install: target in src/Makefile for RPI, consider relation to LINUX.
-# WARNING: The following is copied from examples/Makefile and is here only for reference.
-# Consequences of enabling this are UNKNOWN. Please test and report.
-#ifeq ($(PLATFORM),PLATFORM_RPI)
-#    RAYLIB_PATH       ?= /home/pi/raylib
-#endif
 
-#ifeq ($(PLATFORM),PLATFORM_WEB)
+ifeq ($(PLATFORM),PLATFORM_WEB)
     # Emscripten required variables
-#    EMSDK_PATH          ?= C:/emsdk
- #   EMSCRIPTEN_VERSION  ?= 1.38.31
-  #  CLANG_VERSION       = e$(EMSCRIPTEN_VERSION)_64bit
-    #PYTHON_VERSION      = 2.7.13.1_64bit\python-2.7.13.amd64
-   # NODE_VERSION        = 8.9.1_64bit
-#    export PATH         = $(EMSDK_PATH);$(EMSDK_PATH)\clang\$(CLANG_VERSION);$(EMSDK_PATH)\node\$(NODE_VERSION)\bin;$(EMSDK_PATH)\python\$(PYTHON_VERSION);$(EMSDK_PATH)\emscripten\$(EMSCRIPTEN_VERSION);C:\raylib\MinGW\bin:$$(PATH)
-#    EMSCRIPTEN          = $(EMSDK_PATH)\emscripten\$(EMSCRIPTEN_VERSION)
-#endif
+    EMSDK_PATH          ?= C:/emsdk
+    EMSCRIPTEN_VERSION  ?= 1.38.31
+    CLANG_VERSION       = e$(EMSCRIPTEN_VERSION)_64bit
+    PYTHON_VERSION      = 2.7.13.1_64bit\python-2.7.13.amd64
+    NODE_VERSION        = 8.9.1_64bit
+    export PATH         = $(EMSDK_PATH);$(EMSDK_PATH)\clang\$(CLANG_VERSION);$(EMSDK_PATH)\node\$(NODE_VERSION)\bin;$(EMSDK_PATH)\python\$(PYTHON_VERSION);$(EMSDK_PATH)\emscripten\$(EMSCRIPTEN_VERSION);C:\raylib\MinGW\bin:$$(PATH)
+    EMSCRIPTEN          = $(EMSDK_PATH)\emscripten\$(EMSCRIPTEN_VERSION)
+endif
 
 ifeq ($(PLATFORM),PLATFORM_ANDROID)
     # Android architecture: ARM64
@@ -264,7 +257,7 @@ endif
 #  -D_DEFAULT_SOURCE        use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
 #  -Werror=pointer-arith    catch unportable code that does direct arithmetic on void pointers
 #  -fno-strict-aliasing     jar_xm.h does shady stuff (breaks strict aliasing)
-CFLAGS += -O2 -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
+CFLAGS += -O1 -Wall -std=c99 -D_DEFAULT_SOURCE -Wno-missing-braces -Werror=pointer-arith -fno-strict-aliasing
 
 ifeq ($(RAYLIB_BUILD_MODE),DEBUG)
     CFLAGS += -g
