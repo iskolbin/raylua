@@ -6,7 +6,6 @@
 #include <lauxlib.h>
 #include <lualib.h>
 #include <raylib.h>
-#include <lprefix.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,11 +13,50 @@
 
 // Lua 5.1 compatibility
 #if (LUA_VERSION_NUM <= 501)
+#define LUA_OK 0
+#define LUA_VERSION_MAJOR "5"
+#define LUA_VERSION_MINOR "1"
 #define LUAMOD_API LUALIB_API
-#define luaL_newlib(L,lib) luaL_register(L,NULL,lib)
-#define luaL_setfuncs(L,l,z) luaL_register(L,NULL,l)
-#define luaL_setmetatable(L,mt) luaL_getmetatable(L,mt);lua_setmetatable(L,-2)
+#define luaL_newlib(L,lib) luaL_register((L),NULL,(lib))
+#define luaL_setfuncs(L,l,z) luaL_register((L),NULL,(l))
+#define luaL_setmetatable(L,mt) luaL_getmetatable((L),(mt));lua_setmetatable((L),-2)
 #define lua_rawlen lua_objlen
+#define lua_len lua_objlen
+#define luaL_checkversion(L)
+#define lua_tointegerx(L,V,ISNUM) lua_tointeger((L),(V))
+
+static int lua51_traceback (lua_State *L) {
+  if (!lua_isstring(L, 1))  /* 'message' not a string? */
+    return 1;  /* keep it intact */
+  lua_getfield(L, LUA_GLOBALSINDEX, "debug");
+  if (!lua_istable(L, -1)) {
+    lua_pop(L, 1);
+    return 1;
+  }
+  lua_getfield(L, -1, "traceback");
+  if (!lua_isfunction(L, -1)) {
+    lua_pop(L, 2);
+    return 1;
+  }
+  lua_pushvalue(L, 1);  /* pass error message */
+  lua_pushinteger(L, 2);  /* skip this function and traceback */
+  lua_call(L, 2, 1);  /* call debug.traceback */
+  return 1;
+}
+#endif
+
+// Lua 5.1 and 5.2 compatibility
+#ifndef LUA_VERSUFFIX
+#define LUA_VERSUFFIX "_" LUA_VERSION_MAJOR "_" LUA_VERSION_MINOR
+#endif
+#if !defined(lua_writestring)
+#define lua_writestring(s,l) fwrite((s), sizeof(char), (l), stdout)
+#endif
+#if !defined(lua_writeline)
+#define lua_writeline() (lua_writestring("\n", 1), fflush(stdout))
+#endif
+#if !defined(lua_writestringerror)
+#define lua_writestringerror(s,p) (fprintf(stderr, (s), (p)), fflush(stderr))
 #endif
 
 static void *luaX_checklightuserdata(lua_State *L, int index, const char *funcName) {
@@ -59,7 +97,6 @@ static const luaL_Reg libraries[] = {
 #endif
 
 #define LUA_INITVARVERSION	LUA_INIT_VAR LUA_VERSUFFIX
-
 
 /*
 ** lua_stdin_is_tty detects whether the standard input is a 'tty' (that
@@ -206,8 +243,12 @@ static int msghandler (lua_State *L) {
       msg = lua_pushfstring(L, "(error object is a %s value)",
                                luaL_typename(L, 1));
   }
-  luaL_traceback(L, L, msg, 1);  /* append a standard traceback */
-  return 1;  /* return the traceback */
+#if LUA_VERSION_NUM <= 501
+	//lua51_traceback(L);
+#else
+	luaL_traceback(L, L, msg, 1);  /* append a standard traceback */
+#endif
+	return 1;  /* return the traceback */
 }
 
 
@@ -442,10 +483,18 @@ static void doREPL (lua_State *L) {
 ** Push on the stack the contents of table 'arg' from 1 to #arg
 */
 static int pushargs (lua_State *L) {
-  int i, n;
-  if (lua_getglobal(L, "arg") != LUA_TTABLE)
+  int i, n, isnum;
+  lua_getglobal(L, "arg");
+  if (lua_type(L, -1) != LUA_TTABLE)
     luaL_error(L, "'arg' is not a table");
-  n = (int)luaL_len(L, -1);
+
+  // Inline luaL_len for Lua 5.1 compatibility
+  lua_len(L, -1);
+  n = (int)lua_tointegerx(L, -1, &isnum);
+  if (!isnum)
+    luaL_error(L, "object length is not a number");
+  lua_pop(L, 1);  /* remove object */
+
   luaL_checkstack(L, n + 3, "too many arguments to script");
   for (i = 1; i <= n; i++)
     lua_rawgeti(L, -i, i);
@@ -620,9 +669,15 @@ int main (int argc, char **argv) {
     l_message(argv[0], "cannot create state: not enough memory");
     return EXIT_FAILURE;
   }
-	for (int i = 0; libraries[i].name != NULL; i++) {
-		luaL_requiref(L, libraries[i].name, libraries[i].func, 0);
-	}
+  for (const luaL_Reg *lib = libraries; lib->func; lib++) {
+#if (LUA_VERSION_NUM <= 501)
+    lua_pushcfunction(L, lib->func);
+    lua_pushstring(L, lib->name);
+    lua_call(L, 1, 0);
+#else
+    luaL_requiref(L, lib->name, lib->func, 0);
+#endif
+  }
   lua_pushcfunction(L, &pmain);  /* to call 'pmain' in protected mode */
   lua_pushinteger(L, argc);  /* 1st argument */
   lua_pushlightuserdata(L, argv); /* 2nd argument */
