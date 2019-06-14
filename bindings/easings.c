@@ -316,7 +316,6 @@ static const luaL_Reg l_easings_functions[] = {
 };
 
 LUAMOD_API int luaopen_easings(lua_State *L) {
-  float x = 1;
 	luaL_newlib(L, l_easings_functions);
   lua_pushnumber(L, PI);
   lua_setfield(L, -2, "PI");
