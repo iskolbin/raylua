@@ -71,11 +71,13 @@ static void *luaX_checklightuserdata(lua_State *L, int index, const char *funcNa
 #include "bindings/raylib.c"
 #include "bindings/easings.c"
 #include "bindings/raymath.c"
+#include "bindings/raygui.c"
 
 static const luaL_Reg libraries[] = {
 	{"raylib", luaopen_raylib},
 	{"easings", luaopen_easings},
 	{"raymath", luaopen_raymath},
+	{"raygui", luaopen_raygui},
 	{NULL, NULL}
 };
 
