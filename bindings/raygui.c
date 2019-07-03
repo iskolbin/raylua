@@ -301,15 +301,21 @@ static int l_raygui_GuiLabelButtonU(lua_State *L) {
 
 static int l_raygui_GuiLine(lua_State *L) {
   Rectangle bounds = (*(Rectangle*)luaL_checkudata(L, 1, "Rectangle"));
-  const char* text = luaL_checkstring(L, 2);
-  GuiLine(bounds, text);
+  if (lua_gettop(L)==4) {
+    GuiLine(bounds, NULL);
+  } else {
+    GuiLine(bounds, luaL_checkstring(L, 5));
+  }
   return 0;
 }
 
 static int l_raygui_GuiLineU(lua_State *L) {
   Rectangle bounds = {luaL_checkinteger(L, 1),luaL_checkinteger(L, 2),luaL_checkinteger(L, 3),luaL_checkinteger(L, 4)};
-  const char* text = luaL_checkstring(L, 5);
-  GuiLine(bounds, text);
+  if (lua_gettop(L)==4) {
+    GuiLine(bounds, NULL);
+  } else {
+    GuiLine(bounds, luaL_checkstring(L, 5));
+  }
   return 0;
 }
 
